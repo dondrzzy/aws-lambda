@@ -1,0 +1,103 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: aws-node-rest-api-dynamodb
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-east-1
+  profile: personal
+  environment:
+    DYNAMODB_TABLE: ${self:servcie}-${opt:stage, self:provider.stage}
+	iamRoleStatements:
+		- Effect: Allow
+			Action:
+				- dynamodb:Query
+				- dynamodb:Scan
+				- dynamodb:GetItem
+				- dynamodb:PutItem
+				- dynamodb:UpdateItem
+				- dynamodb:DeleteItem
+			Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+functions:
+	create:
+		handler: todos.create.create
+		events:
+			- http:
+					path: todos
+					method: post
+					cors: true
+
+	list:
+		handler: todos.list.list
+		events:
+			- http:
+					path: todos
+					method: get
+					cors: true
+
+	get:
+		handler: todo.get.get
+		events:
+			- http:
+				path: todos/{id}
+				method: get
+				cors: true
+
+	update:
+		handler: todos.update.update
+		events:
+			- http:
+					path: todos/{id}
+					method: put
+					cors: true
+				
+	delete:
+		handler: todos.delete.delete
+		events:
+			- http:
+					path: todos.delete.delete
+					method: delete
+					cors: true
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+		TodosDynamoDbTable:
+			Type: 'AWS::DynamoDB::Table'
+			DeletionPolicy: Retain
+			Properties:
+				AttributeDefinitions:
+					-
+						AttributeName: id
+						AttributeType: S
+				KeySchema:
+					-
+						AttributeName: id
+						AttributeType: HASH
+				ProvisionedThroughout:
+					ReadCapacityUnits: 1
+					WriteCapacityUnits: 1
+				TableName: ${self:provider.environment.DYNAMODB_TABLE}
